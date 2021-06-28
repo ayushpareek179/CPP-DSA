@@ -1,5 +1,4 @@
 //Static variables in recursion
-
 #include <iostream>
 using namespace std;
 
