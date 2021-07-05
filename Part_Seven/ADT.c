@@ -33,6 +33,15 @@ Version 3: (July 4, 2021)
         Version 3.1.1: Added lShift(struct Arr*), lRotate(struct Arr*), rShift(struct Arr*), rRotate(struct Arr*)
         and ShiftRotate(void (func*)(struct Arr*), int, struct Arr*)
         Version 3.1.2: Coalesced a few cases on the menu
+Version 4: (July 5, 2021)
+    1. initialize(struct Arr*) made error-free
+    2. mergeSorted(struct Arr, struct Arr) added, which fails for pointer-type
+        Version 4.1: 
+        1. Implemented initializer(struct Arr*), which builds upon initialize(struct Arr*)
+        2. Course-correction for initializing array variables in the right way
+        3. mergeSorted(struct Arr, struct Arr) works immaculately now
+        4. Extraneous variables (for the sake of console output) were removed 
+        Version 4.1.1: Improved mergeSorted(struct Arr, struct Arr) by checking 'sorted' precondition
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,8 +55,14 @@ struct Arr
 
 void initialize(struct Arr* x)
 {
-    printf("Enter the size of the array: ");
-    scanf("%d", &x->size);
+    while(1)
+    {
+        printf("Enter the size of the array: ");
+        scanf("%d", &x->size);
+        if(x->size > 0)
+            break;
+        printf("Invalid input, try again\n");
+    }
     x->ptr = (int*)malloc(x->size*sizeof(int));
     x->length = 0;
 }
@@ -403,16 +418,59 @@ void negLeft(struct Arr* x)
     }
 }
 
+struct Arr* mergeSorted(struct Arr a, struct Arr b)
+{
+    int i, j, k; i = j = k = 0;
+    struct Arr* c = (struct Arr*)malloc(sizeof(struct Arr));
+    c->size = a.size + b.size;
+
+    while(i < a.length && j < b.length)
+    {
+        if(a.ptr[i] < b.ptr[j])
+            c->ptr[k++] = a.ptr[i++];
+        else 
+            c->ptr[k++] = b.ptr[j++];
+    }
+    for(; i < a.length; i++)
+        c->ptr[k++] = a.ptr[i];
+    for(; j < b.length; j++)
+        c->ptr[k++] = b.ptr[j];
+    
+    c->length = k;
+    return c;
+//function works fine though;
+}
+
+void initializer(struct Arr* x)
+{//integrated initialiazation
+    if(x->length == 0)
+        initialize(x);
+    int i, n;
+    while(1)
+    {//checking for invalid inputs
+        printf("Enter the number of elements you want to enter: ");
+        scanf(" %d", &n); //consumes newline from previous iteration
+        if(n >= 0)
+            break;
+        printf("Invalid input, try again with a whole number\n");
+    }
+    for(i = 0; i < n; i++)
+        append(x);   
+}
+
 int main()
 {
-    struct Arr* A; int n, i, choice;
-    initialize(A);
+    struct Arr* A = (struct Arr*)malloc(sizeof(struct Arr)); A->length = 0;
+    struct Arr *B = (struct Arr*)malloc(sizeof(struct Arr)); B->length = 0;
+    int n, i, choice;
+    //initialize(A);
     printf("List of array operations:\n");
     printf("\t1. Enter one or more new elements\n\t2. Insert an element at desired index\n");
     printf("\t3. Search for an element with a key\n\t4. Delete an element\n\t5. Get/Replace the element at desired index\n");
     printf("\t6. Obtain the largest/smallest element of the array\n\t7. Obtain the sum/average of all elements\n");
     printf("\t8. Reverse the array\n\t9. Shift/rotate the array\n\t10. Insert an element in a sorted list\n");
-    printf("\t11. Check if the array is sorted\n\t12. Shift all negative elements to the left of the array\n");        
+    printf("\t11. Check if the array is sorted\n\t12. Shift all negative elements to the left of the array\n");
+    printf("\t13. Merge two sorted arrays into one\n");        
     printf("\t100. Display the array\n\t0. Quit the menu\n");
     printf("---------------------------------------\n");
     while(1)
@@ -421,20 +479,9 @@ int main()
         switch(choice)
         {
             case 1:
-            {
                 //to input elements to the array
-                while(1)
-                {//checking for invalid inputs
-                    printf("Enter the number of elements you want to enter: ");
-                    scanf(" %d", &n); //consumes newline from previous iteration
-                    if(n >= 0)
-                        break;
-                    printf("Invalid input, try again with a whole number\n");
-                }
-                for(i = 0; i < n; i++)
-                    append(A);
+                initializer(A);
                 break;
-            }
             case 2:
             {
                 //input position and element
@@ -513,7 +560,7 @@ int main()
                     printf("Invalid request, array is empty\n");
                 else 
                 {
-                    int pos, del; 
+                    int pos; 
                     while(1)
                     {
                         printf("Enter the position for deletion: ");
@@ -524,8 +571,8 @@ int main()
 
                         printf("Invalid input, enter a position between 0 and %d\n", A->length-1);
                     }
-                    del = delete(A, pos); //crashes when used inside as printf("%d",delete(struct Arr*, int))
-                    printf("Deleted element '%d' at position: %d\n", del, pos);
+                    //crashes when used inside as printf("%d",delete(struct Arr*, int)) - BOGUS
+                    printf("Deleted element '%d' at position: %d\n", delete(A, pos), pos);
                 }
                 break;
             }
@@ -557,17 +604,14 @@ int main()
                         printf("Invalid input, enter an index between 0 and %d\n", A->length-1);
                     }
                     if(c == 'G')
-                    {
-                        int ans = get(*A, pos);
-                        printf("Element at index %d is '%d'\n", pos, ans);
-                    }
+                        printf("Element at index %d is '%d'\n", pos, get(*A, pos));
                     else 
                     {
-                        int toSet, had;
+                        int toSet;
                         printf("Enter the new element: ");
                         scanf("%d", &toSet);
-                        had = set(A, pos, toSet);
-                        printf("'%d' was replaced with '%d' at index %d\n", had, A->ptr[pos], pos);
+                        toSet = set(A, pos, toSet); //can't replace in printf since format specifiers re evaluated right-to-left
+                        printf("'%d' was replaced with '%d' at index %d\n", toSet, A->ptr[pos], pos);
                     }
                 }
                 break;
@@ -587,12 +631,10 @@ int main()
                             break;
                         printf("Invalid input, try again\n");
                     }
-                    int extreme = (c == 'L')?max(*A):min(*A);
-                    int position = lsearch(A, extreme, 'X');
                     if(c == 'L')
-                        printf("'%d' is the largest element, its index is %d\n", extreme, position);
+                        printf("'%d' is the largest element, its index is %d\n", (c == 'L')?max(*A):min(*A), lsearch(A, (c == 'L')?max(*A):min(*A), 'X'));
                     else 
-                        printf("'%d' is the smallest element, its index is %d\n", extreme, position);
+                        printf("'%d' is the smallest element, its index is %d\n", (c == 'L')?max(*A):min(*A), lsearch(A, (c == 'L')?max(*A):min(*A), 'X'));
                 }
                 break;
             }
@@ -621,14 +663,10 @@ int main()
                                 break;
                             printf("Invalid choice, try again\n");
                         }
-                        int sumAll = (choice == 'I')?sum(*A):rSum(*A, A->length - 1);
-                        printf("Sum of all array elements is %d\n", sumAll);
+                        printf("Sum of all array elements is %d\n", (choice == 'I')?sum(*A):rSum(*A, A->length - 1));
                     }
-                    else 
-                    {
-                        float avg = average(*A);
-                        printf("Average of all array elements is %f\n", avg);
-                    }
+                    else
+                        printf("Average of all array elements is %f\n", average(*A));
                 }
                 break;
             }
@@ -743,6 +781,33 @@ int main()
                 }
                 break;
             }
+            case 13:
+            {
+                if(A->length == 0)
+                    printf("Invalid request, first array is empty\n");
+                else 
+                {
+                    if(isSorted(*A))
+                    {
+                        struct Arr *C = (struct Arr*)malloc(sizeof(struct Arr)); //can initialize here or outside
+                        //can even use struct Arr *C;
+                        initializer(B);
+                        if(isSorted(*B))
+                        {
+                            printf("First array: "); display(*A);
+                            printf("Second array: "); display(*B);
+                            C = mergeSorted(*A, *B);
+                            printf("Merged array: "); display(*C); //can also use display(*mergeSorted(*A, *B))
+                        }
+                        else 
+                            printf("Operation is invalid for unsorted arrays\n");
+                    }
+                    else
+                        printf("Operation is invalid for unsorted arrays\n");
+                }
+                break;
+            }
+            
             case 100:
                 if(A->length == 0)
                     printf("Invalid request, array is empty\n");
