@@ -42,6 +42,11 @@ Version 4: (July 5, 2021)
         3. mergeSorted(struct Arr, struct Arr) works immaculately now
         4. Extraneous variables (for the sake of console output) were removed 
         Version 4.1.1: Improved mergeSorted(struct Arr, struct Arr) by checking 'sorted' precondition
+Version 5: (July 6, 2021)
+    1. Added set operations: Union(struct Arr, struct Arr), Intersection(struct Arr, struct Arr) and Difference(struct Arr, struct Arr)
+    2. Added freer(struct Arr*) for deallocating memory efficiently
+    3. Minor improvements in console output
+    4. ##Cases 13 and 14 can work only once and are to be used independently##
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -394,10 +399,14 @@ int isSorted(struct Arr x)
         reverse(&x);
     }
     for(i = 0; i < x.length - 1; i++)
+    {
         if(x.ptr[i] > x.ptr[i+1])
+        {
+            if(f)
+                reverse(&x);
             return 0;
-    if(f)
-        reverse(&x);
+        }
+    }
     return 1;
 }
 
@@ -438,8 +447,114 @@ struct Arr* mergeSorted(struct Arr a, struct Arr b)
     
     c->length = k;
     return c;
-//function works fine though;
 }
+
+struct Arr* Union(struct Arr a, struct Arr b)
+{
+    int i, j, k; i = j = k = 0;
+    struct Arr* c = (struct Arr*)malloc(sizeof(struct Arr));
+    c->size = a.size + b.size;
+
+    if(isSorted(a) && isSorted(b)) //mergeSorted-like
+    {
+        while(i < a.length && j < b.length)
+        {
+            if(a.ptr[i] < b.ptr[j])
+                c->ptr[k++] = a.ptr[i++];
+            else if(b.ptr[j] < a.ptr[i])
+                c->ptr[k++] = b.ptr[j++];
+            else
+            {
+                c->ptr[k++] = b.ptr[j++]; //can choose either one of a.ptr[i] and b.ptr[j]
+                i++; //single copy
+            }
+        }
+        for(; i < a.length; i++)
+            c->ptr[k++] = a.ptr[i];
+        for(; j < b.length; j++)
+            c->ptr[k++] = b.ptr[j];
+    }
+    else //naïve implementation 
+    {
+        for(; i < a.length; i++)
+            c->ptr[k++] = a.ptr[i]; //copy everything from first array
+        
+        for(; j < b.length; j++)
+        {
+            if(lsearch(&a, b.ptr[j], 'X') == -1) //copy only if dissimilar
+                c->ptr[k++] = b.ptr[j];
+        }
+    }
+    c->length = k;
+    return c;
+}
+
+struct Arr* Intersection(struct Arr a, struct Arr b)
+{
+    int i, j, k; i = j = k = 0;
+    struct Arr* c = (struct Arr*)malloc(sizeof(struct Arr));
+    c->size = a.size + b.size;
+
+    if(isSorted(a) && isSorted(b)) //mergeSorted-like
+    {
+        while(i < a.length && j < b.length)
+        {
+            if(a.ptr[i] < b.ptr[j])
+                i++;
+            else if(b.ptr[j] < a.ptr[i])
+                j++;
+            else
+            {
+                c->ptr[k++] = b.ptr[j++]; //can choose either one of a.ptr[i] and b.ptr[j]
+                i++; //single copy
+            }
+        }
+        //No remnants to be copied
+    }
+    else //naïve implementation 
+    {
+        for(; i < a.length; i++)
+            if(lsearch(&b, a.ptr[i], 'X') != -1) //if found in second array, copy
+                c->ptr[k++] = a.ptr[i];
+    }
+    c->length = k;
+    return c;
+}
+
+struct Arr* Difference(struct Arr a, struct Arr b)
+{
+    int i, j, k; i = j = k = 0;
+    struct Arr* c = (struct Arr*)malloc(sizeof(struct Arr));
+    c->size = a.size + b.size;
+
+    if(isSorted(a) && isSorted(b)) //mergeSorted-like
+    {
+        while(i < a.length && j < b.length)
+        {
+            if(a.ptr[i] < b.ptr[j]) //copy only from first
+                c->ptr[k++] = a.ptr[i++];
+            else if(b.ptr[j] < a.ptr[i])
+                j++; //leave the second one as it is
+            else
+            {//equal elements need to be disregarded
+                i++;
+                j++;
+            }
+        }
+        for(; i < a.length; i++)
+            c->ptr[k++] = a.ptr[i];
+        //remnants from second array not needed
+    }
+    else //naïve implementation 
+    {
+        for(; i < a.length; i++)
+            if(lsearch(&b, a.ptr[i], 'X') == -1) //if not found in second array, copy
+                c->ptr[k++] = a.ptr[i];
+    }
+    c->length = k;
+    return c;
+}
+
 
 void initializer(struct Arr* x)
 {//integrated initialiazation
@@ -458,10 +573,15 @@ void initializer(struct Arr* x)
         append(x);   
 }
 
+void freer(struct Arr* x)
+{
+    free(x->ptr);
+    free(x);
+}
+
 int main()
 {
     struct Arr* A = (struct Arr*)malloc(sizeof(struct Arr)); A->length = 0;
-    struct Arr *B = (struct Arr*)malloc(sizeof(struct Arr)); B->length = 0;
     int n, i, choice;
     //initialize(A);
     printf("List of array operations:\n");
@@ -470,7 +590,7 @@ int main()
     printf("\t6. Obtain the largest/smallest element of the array\n\t7. Obtain the sum/average of all elements\n");
     printf("\t8. Reverse the array\n\t9. Shift/rotate the array\n\t10. Insert an element in a sorted list\n");
     printf("\t11. Check if the array is sorted\n\t12. Shift all negative elements to the left of the array\n");
-    printf("\t13. Merge two sorted arrays into one\n");        
+    printf("\t13. Merge two sorted arrays into one\n\t14. Undertake set operations\n");        
     printf("\t100. Display the array\n\t0. Quit the menu\n");
     printf("---------------------------------------\n");
     while(1)
@@ -585,7 +705,7 @@ int main()
                     char c; int pos;
                     while(1)
                     {
-                        printf("Enter G to get and R to replace an element\n");
+                        printf("Enter G to get and R to replace an element: ");
                         scanf(" %c", &c);
                         if(c == 'G' || c == 'R')
                             break;
@@ -787,27 +907,103 @@ int main()
                     printf("Invalid request, first array is empty\n");
                 else 
                 {
+                    struct Arr* B = (struct Arr*)malloc(sizeof(struct Arr)); B->length = 0;
                     if(isSorted(*A))
                     {
-                        struct Arr *C = (struct Arr*)malloc(sizeof(struct Arr)); //can initialize here or outside
+                        //struct Arr *C = (struct Arr*)malloc(sizeof(struct Arr)); //can initialize here or outside
                         //can even use struct Arr *C;
                         initializer(B);
                         if(isSorted(*B))
                         {
                             printf("First array: "); display(*A);
                             printf("Second array: "); display(*B);
-                            C = mergeSorted(*A, *B);
-                            printf("Merged array: "); display(*C); //can also use display(*mergeSorted(*A, *B))
+                            printf("Merged array: "); display(*mergeSorted(*A, *B)); //can also use display(*mergeSorted(*A, *B))
                         }
                         else 
                             printf("Operation is invalid for unsorted arrays\n");
+                        freer(B);
                     }
                     else
                         printf("Operation is invalid for unsorted arrays\n");
                 }
                 break;
             }
-            
+            case 14:
+            {
+                if(A->length == 0)
+                    printf("Invalid request, first array is empty\n");
+                else 
+                {
+                    struct Arr* B = (struct Arr*)malloc(sizeof(struct Arr)); B->length = 0;
+                    char c; int var, var1;
+                    initializer(B); //initialized
+                    while(1)
+                    {
+                        printf("Enter U for union, I for intersection, D for difference and S for verifying set membership: "); 
+                        scanf(" %c", &c);
+                        if(c == 'U' || c == 'I' || c == 'D' || c == 'S')
+                            break;
+                        printf("Invalid input, try again\n");
+                    }
+                    if(c != 'S')
+                    {
+                        if(c == 'D') //A-B or B-A?
+                        {
+                            printf("Enter 0 to use the first array as minuend: ");
+                            scanf("%d", &i);
+                            if(i != 0)
+                                printf("You have chosen second array as the minuend\n");
+                        }
+                        printf("A: "); display(*A);
+                        printf("B: "); display(*B);
+                        //printing paradigm
+                        if(c == 'U')
+                        {
+                            printf("Union: "); 
+                            display(*Union(*A, *B));
+                        }
+                        else if (c == 'I')
+                        {
+                            printf("Intersection: ");
+                            display(*Intersection(*A, *B));
+                        }
+                        else
+                        {
+                            if(i == 0)
+                            {
+                                printf("(A - B): ");
+                                display(*Difference(*A,*B));
+                            }
+                            else
+                            {
+                                printf("(B - A): ");
+                                display(*Difference(*B, *A));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        while(1)
+                        {
+                            printf("Press 1 to search the first set or 2 to do so for the second one: ");
+                            scanf("%d", &i);
+                            if(i == 1 || i == 2)
+                                break;
+                            printf("Invalid entry, try again\n");
+                        }
+                        printf("Enter a member to be searched: ");
+                        scanf("%d", &var1);
+                        
+                        var = (i == 1)?lsearch(A, var1, 'X'):lsearch(B, var1, 'X');
+                        if(var == -1)
+                            printf("%d is not a member of the set\n", var1);
+                        else
+                            printf("%d is the %dth element of the set\n", var1, var);
+                    }
+                    freer(B);
+                }
+                break;
+            }
             case 100:
                 if(A->length == 0)
                     printf("Invalid request, array is empty\n");
@@ -825,6 +1021,7 @@ int main()
             break;
         else 
             printf("Scroll up to refer to the options\n");
-    }    
+    }
+    freer(A);    
     return 0;
 }
