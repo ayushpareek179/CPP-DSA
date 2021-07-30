@@ -1,0 +1,1 @@
+atHead(head, A[i]);
