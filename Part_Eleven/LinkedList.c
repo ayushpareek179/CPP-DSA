@@ -4,6 +4,7 @@ Version @1: 30/07/21 - three kinds of insertion, display and custom-creation usi
 Version @2: 01/08/21 - counting number of nodes, calculating sum of nodes' data, returning max/min elements and their indices, 
                        implementing linear search (iteratively and recursively, which return indices) and its bring-to-head facilitator
 Version @3: 02/08/21 - integrated insert, correction in 'linear search improvement' if foundIndex is 0 and change in create
+Version @4: 02/08/21 - O(1) insertEnd, insertSorted and deletion implemented, create and display adjusted for changes
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,9 +55,14 @@ void afterN(struct Node* aNode, int n)
         aNode->next = newNode;
     }
 }
-
+/*from lectures*/
 void display(struct Node* ptr)
 {
+    if(!ptr)
+    {
+        printf("Linked list is empty\n");
+        return;
+    }
     while(ptr != NULL)
     {
         printf("%d ", ptr->data);
@@ -145,7 +151,7 @@ int insert(struct Node** head, int pos, int x)
     {
         struct Node* temp = (struct Node*)malloc(sizeof(struct Node));
         temp->data = x;
-        temp->next = *head;
+        temp->next = *head; //null if no node existed
         *head = temp;
         flag = 1;
     }
@@ -166,9 +172,79 @@ int insert(struct Node** head, int pos, int x)
     }
     return flag;
 }
+//O(1) function to insert at end
+void insertEnd(struct Node** head, struct Node** end, int n)
+{
+    struct Node* temp = (struct Node*)malloc(sizeof(struct Node));
+    temp->data = n;
+    temp->next = NULL;
+    if(*head == *end && *head == NULL)
+        *head = *end = temp;
+    else
+    {
+        (*end)->next = temp;
+        *end = temp;
+    }
+}
+//insertion in a sorted linked list
+void insertSorted(struct Node** head, int n)
+{
+    struct Node* temp = (struct Node*)malloc(sizeof(struct Node));
+    struct Node* ptr = *head;
+    temp->data = n;
+    if(*head == NULL)
+    {
+        temp->next = NULL;
+        *head = temp;
+    }
+    else
+    {
+        while(ptr->next && (ptr->next)->data < temp->data)
+            ptr = ptr->next;
+        if(*head == ptr && temp->data < ptr->data)
+        {
+            temp->next = ptr;
+            *head = temp;   
+        }
+        else
+        {
+            temp->next = ptr->next;
+            ptr->next = temp;
+        }        
+    }
+}
+
+int deletion(struct Node** head, int pos)
+{
+    if(pos <= 0 || pos > countNodes(*head))
+    {
+        printf("Invalid deletion index\n");
+        return INT_MIN;
+    }
+    if(*head == NULL)
+    {
+        printf("Linked list is empty\n");
+        return INT_MIN;
+    }
+    struct Node* ptr = *head, *q; int deleted, i;
+    if(pos == 1)
+        *head = ptr->next;
+    else
+    {
+        for(i = 1; i <= pos-1; i++)
+        {
+            q = ptr;
+            ptr = ptr->next;
+        }
+        q->next = ptr->next;      
+    }
+    deleted = ptr->data;
+    free(ptr);
+    return deleted;  
+}
 
 //custom creation in a weird, roundabout manner with choice
-void create(struct Node** head, int A[], int n, int choice)
+void create(struct Node** head, struct Node** end, int A[], int n, int choice)
 {
     int i, f;
     if(!choice)
@@ -188,9 +264,9 @@ void create(struct Node** head, int A[], int n, int choice)
             }
         }
     }
-    else //choice == 1
+    else if(choice == 1)
     {
-        for(i = 0; i < 10; i++)
+        for(i = 0; i < n; i++)
         {
             f = insert(head, i%2, A[i]); //can mimic the actions above
             if(!f)
@@ -199,6 +275,16 @@ void create(struct Node** head, int A[], int n, int choice)
                 //break;
             }
         }
+    }
+    else if(choice == 2)
+    {
+        for(i = 0; i < n; i++)
+            insertEnd(head, end, A[i]);
+    }
+    else if(choice == 3)
+    {
+        for(i = 0; i < n; i++)
+            insertSorted(head, A[i]);
     }
 }
 
@@ -272,26 +358,25 @@ int rSearch(struct Node* ptr, int key, int index)
 
 int main()
 {
-    int *p, arr[] = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100}, index, f;
-    struct Node* first = NULL;
-    create(&first, arr, 10, 1);
+    struct Node* f = NULL;
+    int arr[] = {10, 20, 30, 40, 50};
+    create(&f, NULL, arr, 5, 3);
     
     printf("Linked list contents:\n");
-    display(first);
-    printf("\n");
-    index = search(&first, first, 90, 1);
-    if(index != -1)
-        printf("Element %d was found at index: %d\n", 90, index);
-    else
-        printf("Element not found\n");
-    index = search(&first, first, 10, 0);
-    if(index != -1)
-        printf("Element %d was found at index: %d\n", 10, index);
-    else
-        printf("Element not found\n");
+    display(f); printf("\n");
+
+    int i; long m;
+    for(i = 1; i <= 7; i++)
+    {
+        m = (long)deletion(&f, 1) - 1l;
+        if(++m != INT_MIN)
+            printf("Deleted %d at index %d\n", m, i);
+        else
+            printf("Hmm..\n");
+    }
+
     printf("Linked list contents:\n");
-    display(first);
-    printf("\n");
+    display(f); printf("\n");
 
     printf("Program terminated\n");
     return 0;

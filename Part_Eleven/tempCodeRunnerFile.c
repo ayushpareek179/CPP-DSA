@@ -1,1 +1,1 @@
-atHead(head, A[i]);
+&& ptr->next
