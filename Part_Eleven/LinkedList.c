@@ -3,6 +3,7 @@
 Version @1: 30/07/21 - three kinds of insertion, display and custom-creation using an array
 Version @2: 01/08/21 - counting number of nodes, calculating sum of nodes' data, returning max/min elements and their indices, 
                        implementing linear search (iteratively and recursively, which return indices) and its bring-to-head facilitator
+Version @3: 02/08/21 - integrated insert, correction in 'linear search improvement' if foundIndex is 0 and change in create
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,25 +52,6 @@ void afterN(struct Node* aNode, int n)
         newNode->data = n;
         newNode->next = aNode->next;
         aNode->next = newNode;
-    }
-}
-//custom creation in a weird, roundabout manner
-void create(struct Node** head, int A[], int n)
-{
-    int i;
-    for(i = 0; i < n; i++)
-    {
-        if(i%3 == 0 || i == 1)
-            atEnd(head, A[i]);
-        else if(i%3 == 2)
-            atHead(head, A[i]);
-        else
-        {
-            struct Node* someNode = *head;
-            while(someNode->data != A[2])
-                someNode = someNode->next;
-            afterN(someNode, A[i]);
-        }
     }
 }
 
@@ -129,7 +111,7 @@ int* maxMin(struct Node* ptr)
 
 int search(struct Node** head, struct Node* ptr, int key, int choice)
 {
-    struct Node *last = NULL;
+    struct Node *last = NULL; //can assign last = ptr but that's against definition and anyway not needed if foundIndex = 0 
     int index = 0;
     while(ptr)
     {
@@ -137,9 +119,12 @@ int search(struct Node** head, struct Node* ptr, int key, int choice)
         {
             if(choice)
             {
-                last->next = ptr->next;
-                ptr->next = *head;
-                *head = ptr; //magic - just like addHead's last line
+                if(*head != ptr) //if element is found at index 0, assignment leads to ptr->next = ptr (infinite linked list) 
+                {
+                    last->next = ptr->next;
+                    ptr->next = *head;
+                    *head = ptr; //magic - just like addHead's last line
+                }
             }
             return index;
         }
@@ -148,6 +133,73 @@ int search(struct Node** head, struct Node* ptr, int key, int choice)
         index++; 
     }
     return -1;
+}
+
+//integrated insertion function 
+int insert(struct Node** head, int pos, int x)
+{
+    int flag = 0; //allocation unsuccessful
+    if(pos < 0 || pos > countNodes(*head))
+        return flag;
+    if(pos == 0) //for head
+    {
+        struct Node* temp = (struct Node*)malloc(sizeof(struct Node));
+        temp->data = x;
+        temp->next = *head;
+        *head = temp;
+        flag = 1;
+    }
+    else //every other position
+    {
+        struct Node* ptr = *head, *temp;
+        int i = 1;
+        for(; i <= pos-1 && ptr != NULL; i++) //stops at a node* n and not n->next
+            ptr = ptr->next;
+        if(ptr) //prevents accessing invalid position
+        {
+            temp = (struct Node*)malloc(sizeof(struct Node));
+            temp->data = x;
+            temp->next = ptr->next;
+            ptr->next = temp;
+            flag = 1;
+        } //redundant now because of the return statement above
+    }
+    return flag;
+}
+
+//custom creation in a weird, roundabout manner with choice
+void create(struct Node** head, int A[], int n, int choice)
+{
+    int i, f;
+    if(!choice)
+    {
+        for(i = 0; i < n; i++)
+        {
+            if(i%3 == 0 || i == 1)
+                atEnd(head, A[i]);
+            else if(i%3 == 2)
+                atHead(head, A[i]);
+            else
+            {
+                struct Node* someNode = *head;
+                while(someNode->data != A[2])
+                    someNode = someNode->next;
+                afterN(someNode, A[i]);
+            }
+        }
+    }
+    else //choice == 1
+    {
+        for(i = 0; i < 10; i++)
+        {
+            f = insert(head, i%2, A[i]); //can mimic the actions above
+            if(!f)
+            {
+                printf("Node could not be allocated\n");
+                //break;
+            }
+        }
+    }
 }
 
 /*recursive equivalents follow*/
@@ -220,18 +272,19 @@ int rSearch(struct Node* ptr, int key, int index)
 
 int main()
 {
-    int *p, arr[] = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100}, index;
+    int *p, arr[] = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100}, index, f;
     struct Node* first = NULL;
-    create(&first, arr, 10);  
+    create(&first, arr, 10, 1);
+    
     printf("Linked list contents:\n");
     display(first);
     printf("\n");
-    index = search(&first, first, 100, 1);
+    index = search(&first, first, 90, 1);
     if(index != -1)
-        printf("Element %d was found at index: %d\n", 100, index);
+        printf("Element %d was found at index: %d\n", 90, index);
     else
         printf("Element not found\n");
-    index = search(&first, first, 10, 1);
+    index = search(&first, first, 10, 0);
     if(index != -1)
         printf("Element %d was found at index: %d\n", 10, index);
     else
