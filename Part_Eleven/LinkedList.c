@@ -5,6 +5,7 @@ Version @2: 01/08/21 - counting number of nodes, calculating sum of nodes' data,
                        implementing linear search (iteratively and recursively, which return indices) and its bring-to-head facilitator
 Version @3: 02/08/21 - integrated insert, correction in 'linear search improvement' if foundIndex is 0 and change in create
 Version @4: 02/08/21 - O(1) insertEnd, insertSorted and deletion implemented, create and display adjusted for changes
+                @4.1 - implemented isSorted
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -243,6 +244,38 @@ int deletion(struct Node** head, int pos)
     return deleted;  
 }
 
+int isSorted(struct Node* ptr)
+{
+    int asc = 1, desc = 1, prevAsc = INT_MIN, prevDesc = INT_MAX;
+    while(ptr)
+    {
+        if(asc)
+        {
+            if(ptr->data >= prevAsc)
+                prevAsc = ptr->data;
+            else
+                asc = 0;
+        }
+        if(desc)
+        {
+            if(ptr->data <= prevDesc)
+                prevDesc = ptr->data;
+            else
+                desc = 0;
+        }
+        if(!(asc+desc))
+            return 0;
+        ptr = ptr->next;
+    }
+    if(asc+desc == 2)
+        printf("All elements are equal\n");//return 3;
+    else if(asc == 1)
+        printf("Sorted in ascending order\n");//return 1;
+    else
+        printf("Sorted in descending order\n");//return 2;
+    return 1;
+}
+
 //custom creation in a weird, roundabout manner with choice
 void create(struct Node** head, struct Node** end, int A[], int n, int choice)
 {
@@ -268,7 +301,7 @@ void create(struct Node** head, struct Node** end, int A[], int n, int choice)
     {
         for(i = 0; i < n; i++)
         {
-            f = insert(head, i%2, A[i]); //can mimic the actions above
+            f = insert(head, countNodes(*head), A[i]); //can mimic the actions above
             if(!f)
             {
                 printf("Node could not be allocated\n");
@@ -359,25 +392,17 @@ int rSearch(struct Node* ptr, int key, int index)
 int main()
 {
     struct Node* f = NULL;
-    int arr[] = {10, 20, 30, 40, 50};
-    create(&f, NULL, arr, 5, 3);
+    int arr[] = {10, 10, 10, 10, 10};
+    create(&f, NULL, arr, 5, 0);
     
     printf("Linked list contents:\n");
     display(f); printf("\n");
 
-    int i; long m;
-    for(i = 1; i <= 7; i++)
-    {
-        m = (long)deletion(&f, 1) - 1l;
-        if(++m != INT_MIN)
-            printf("Deleted %d at index %d\n", m, i);
-        else
-            printf("Hmm..\n");
-    }
-
-    printf("Linked list contents:\n");
-    display(f); printf("\n");
-
+    if(!isSorted(f))
+        printf("List is unsorted\n");
+    else
+        printf("Hmm..!\n");
+    
     printf("Program terminated\n");
     return 0;
 }
