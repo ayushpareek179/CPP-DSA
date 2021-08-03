@@ -8,6 +8,7 @@ Version @4: 02/08/21 - O(1) insertEnd, insertSorted and deletion implemented, cr
                 @4.1 - implemented isSorted
 Version @5: 03/08/21 - delDups for implementing deletion of nodes with duplicate elements  
                 @5.1 - revArr (reversal using an array), revNext (reversing links) and revRec (reversal using recursion) implemented
+                @5.2 - concat (joining two linked lists) and mergeSorted (two sorted lists combined into a sorted list) implemented
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -332,6 +333,59 @@ void revNext(struct Node** head)
     *head = q;
 }
 
+struct Node* concat(struct Node** firstHead, struct Node* secondHead)
+{
+    /*using *ptr in signature doesn't work because of pseudo call-by-value nature
+    and only the last element of the first list ends up becoming a part of the list*/
+    struct Node** thirdHead = firstHead, *p = *firstHead;
+    while(p->next) //non-last node for LL#1
+        p = p->next;
+    p->next = secondHead; //connected
+    return *thirdHead;
+}
+
+struct Node* mergeSorted(struct Node** firstHead, struct Node** secondHead, struct Node** thirdHead)
+{
+    struct Node *p = *firstHead, *q = *secondHead;
+    struct Node* r1, *r2;
+    if(p->data <= q->data)
+    {
+        thirdHead = firstHead;
+        r1 = r2 = *thirdHead;
+        p = p->next;
+        r1->next = NULL; //writing this line before the previous one nulls out LL#1 permanently
+    }
+    else
+    {
+        thirdHead = secondHead;
+        r1 = r2 = *thirdHead;
+        q = q->next;
+        r1->next = NULL; //writing this line before the previous one nulls out LL#2 permanently
+    }
+    while(p && q)
+    {
+        if(p->data <= q->data)
+        {
+            r2->next = p;
+            r2 = p;
+            p = p->next;
+            r2->next = NULL;
+        }
+        else
+        {
+            r2->next = q;
+            r2 = q;
+            q = q->next;
+            r2->next = NULL;
+        }
+    }
+    if(p)
+        r2->next = p;
+    if(q)
+        r2->next = q;
+    return *thirdHead;
+}
+
 //custom creation in a weird, roundabout manner with choice
 void create(struct Node** head, struct Node** end, int A[], int n, int choice)
 {
@@ -458,27 +512,23 @@ void revRec(struct Node** head, struct Node* p, struct Node* q)
 
 int main()
 {
-    struct Node* f = NULL;
-    int arr[] = {10, 20, 30, 40, 50, 60};
-    create(&f, NULL, arr, 6, 0);
+    struct Node* f = NULL, *g = NULL, *h;
+    int a[] = {10, 20, 30, 40, 50, 60};
+    int b[] = {15, 55, 35};
+    create(&f, NULL, a, 6, 3);
+    create(&g, NULL, b, 3, 3);
     
-    printf("Linked list contents:\n");
+    printf("Linked list-1 contents:\n");
     display(f); printf("\n");
 
-    revArr(&f);
-    
-    printf("Linked list contents:\n");
-    display(f); printf("\n");
+    printf("Linked list-2 contents:\n");
+    display(g); printf("\n");
 
-    revNext(&f);
+    //h = concat(&f, g);
+    h = mergeSorted(&f, &g, &h);
 
-    printf("Linked list contents:\n");
-    display(f); printf("\n");
-
-    revRec(&f, f, NULL);
-
-    printf("Linked list contents:\n");
-    display(f); printf("\n");
+    printf("Concatenated linked list contents:\n");
+    display(h); printf("\n");
 
     printf("Program terminated\n");
     return 0;
