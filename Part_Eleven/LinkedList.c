@@ -6,6 +6,7 @@ Version @2: 01/08/21 - counting number of nodes, calculating sum of nodes' data,
 Version @3: 02/08/21 - integrated insert, correction in 'linear search improvement' if foundIndex is 0 and change in create
 Version @4: 02/08/21 - O(1) insertEnd, insertSorted and deletion implemented, create and display adjusted for changes
                 @4.1 - implemented isSorted
+Version @5: 03/08/21 - delDups for implementing deletion of nodes with duplicate elements  
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -268,12 +269,35 @@ int isSorted(struct Node* ptr)
         ptr = ptr->next;
     }
     if(asc+desc == 2)
-        printf("All elements are equal\n");//return 3;
+        return 3;//printf("All elements are equal\n");
     else if(asc == 1)
-        printf("Sorted in ascending order\n");//return 1;
+        return 1;//printf("Sorted in ascending order\n");
     else
-        printf("Sorted in descending order\n");//return 2;
-    return 1;
+        return 2; //printf("Sorted in descending order\n");
+}
+
+void delDups(struct Node* ptr)
+{
+    if(!isSorted(ptr))
+    {
+        printf("Linked list is not sorted\n");
+        return;
+    }
+    struct Node* q = ptr->next;
+    while(q)
+    {
+        if(ptr->data != q->data)
+        {
+            ptr = q;
+            q = q->next;
+        }
+        else
+        {
+            ptr->next = q->next;
+            free(q);
+            q = ptr->next;
+        }
+    }
 }
 
 //custom creation in a weird, roundabout manner with choice
@@ -392,17 +416,17 @@ int rSearch(struct Node* ptr, int key, int index)
 int main()
 {
     struct Node* f = NULL;
-    int arr[] = {10, 10, 10, 10, 10};
-    create(&f, NULL, arr, 5, 0);
+    int arr[] = {10, 10, 10, 10, 10, 50, 20};
+    create(&f, NULL, arr, 7, 3);
     
     printf("Linked list contents:\n");
     display(f); printf("\n");
 
-    if(!isSorted(f))
-        printf("List is unsorted\n");
-    else
-        printf("Hmm..!\n");
+    delDups(f);
     
+    printf("Linked list contents:\n");
+    display(f); printf("\n");
+
     printf("Program terminated\n");
     return 0;
 }
