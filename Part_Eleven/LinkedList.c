@@ -7,6 +7,7 @@ Version @3: 02/08/21 - integrated insert, correction in 'linear search improveme
 Version @4: 02/08/21 - O(1) insertEnd, insertSorted and deletion implemented, create and display adjusted for changes
                 @4.1 - implemented isSorted
 Version @5: 03/08/21 - delDups for implementing deletion of nodes with duplicate elements  
+                @5.1 - revArr (reversal using an array), revNext (reversing links) and revRec (reversal using recursion) implemented
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -300,6 +301,37 @@ void delDups(struct Node* ptr)
     }
 }
 
+void revArr(struct Node** head)
+{
+    int* arr = (int*)malloc(sizeof(int)*countNodes(*head)), index = 0;
+    struct Node* ptr = *head;
+    while(ptr)
+    {
+        arr[index++] = ptr->data;
+        ptr = ptr->next;
+    }
+    ptr = *head;
+    while(ptr)
+    {
+        ptr->data = arr[--index];
+        ptr = ptr->next;
+    }
+}
+
+void revNext(struct Node** head)
+{
+    struct Node* p = *head, *q, *r;
+    q = r = NULL;
+    while(p)
+    {
+        r = q;
+        q = p;
+        p = p->next;
+        q->next = r;
+    }
+    *head = q;
+}
+
 //custom creation in a weird, roundabout manner with choice
 void create(struct Node** head, struct Node** end, int A[], int n, int choice)
 {
@@ -413,17 +445,38 @@ int rSearch(struct Node* ptr, int key, int index)
     return rSearch(ptr->next, key, index+1); //may/mayn't write return
 }
 
+void revRec(struct Node** head, struct Node* p, struct Node* q)
+{
+    if(p)
+    {
+        revRec(head, p->next, p);
+        p->next = q;
+    }
+    else
+        *head = q;
+}
+
 int main()
 {
     struct Node* f = NULL;
-    int arr[] = {10, 10, 10, 10, 10, 50, 20};
-    create(&f, NULL, arr, 7, 3);
+    int arr[] = {10, 20, 30, 40, 50, 60};
+    create(&f, NULL, arr, 6, 0);
     
     printf("Linked list contents:\n");
     display(f); printf("\n");
 
-    delDups(f);
+    revArr(&f);
     
+    printf("Linked list contents:\n");
+    display(f); printf("\n");
+
+    revNext(&f);
+
+    printf("Linked list contents:\n");
+    display(f); printf("\n");
+
+    revRec(&f, f, NULL);
+
     printf("Linked list contents:\n");
     display(f); printf("\n");
 
