@@ -9,6 +9,7 @@ Version @4: 02/08/21 - O(1) insertEnd, insertSorted and deletion implemented, cr
 Version @5: 03/08/21 - delDups for implementing deletion of nodes with duplicate elements  
                 @5.1 - revArr (reversal using an array), revNext (reversing links) and revRec (reversal using recursion) implemented
                 @5.2 - concat (joining two linked lists) and mergeSorted (two sorted lists combined into a sorted list) implemented
+Version @6: 04/08/21 - hasLoop (for detecting a loop in the linked list) implemented
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -386,6 +387,19 @@ struct Node* mergeSorted(struct Node** firstHead, struct Node** secondHead, stru
     return *thirdHead;
 }
 
+int hasLoop(struct Node* ptr)
+{
+    struct Node* q = ptr;
+    do
+    {
+        ptr = ptr->next;
+        q = q->next;
+        if(q)
+            q = q->next;
+    }while(ptr != q && (ptr && q));
+    return (ptr != q)?0:1;
+}
+
 //custom creation in a weird, roundabout manner with choice
 void create(struct Node** head, struct Node** end, int A[], int n, int choice)
 {
@@ -512,24 +526,22 @@ void revRec(struct Node** head, struct Node* p, struct Node* q)
 
 int main()
 {
-    struct Node* f = NULL, *g = NULL, *h;
+    struct Node* f = NULL, *g, *h;
     int a[] = {10, 20, 30, 40, 50, 60};
-    int b[] = {15, 55, 35};
     create(&f, NULL, a, 6, 3);
-    create(&g, NULL, b, 3, 3);
     
-    printf("Linked list-1 contents:\n");
-    display(f); printf("\n");
+    g = f->next->next; //on 30
+    h = g->next->next->next; //on 60 - can be on any element after g
+    h->next = g; //loop introduced
 
-    printf("Linked list-2 contents:\n");
-    display(g); printf("\n");
-
-    //h = concat(&f, g);
-    h = mergeSorted(&f, &g, &h);
-
-    printf("Concatenated linked list contents:\n");
-    display(h); printf("\n");
-
+    if(!hasLoop(f))
+    {
+        printf("Linked list contents:\n");
+        display(f); printf("\n");
+    }
+    else
+        printf("Linked list has a loop\n");
+    
     printf("Program terminated\n");
     return 0;
 }
