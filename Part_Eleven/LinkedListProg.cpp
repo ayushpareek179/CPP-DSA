@@ -15,6 +15,8 @@ class LinkedList
 {
     private:
     Node<T>* head;
+    Node<T>* middleR();
+    Node<T>* middleL();
     public:
     LinkedList()
     {
@@ -25,6 +27,7 @@ class LinkedList
     void display();
     int countNodes();
     T deleteNode(int);
+    Node<T>* middle(int); //student exercise
     ~LinkedList();
 };
 
@@ -129,6 +132,49 @@ T LinkedList<T>::deleteNode(int position)
     return var;
 }
 
+template <class T>
+Node<T>* LinkedList<T>::middleR()
+{
+    Node<T>* ptr, *q;
+    ptr = q = head;
+    while(q)
+    {
+        q = q->next;
+        if(q)
+        {
+            q = q->next;
+            ptr = ptr->next;
+        }
+    }
+    return ptr;
+}
+
+template <typename T>
+Node<T>* LinkedList<T>::middleL()
+{
+    Node<T>* ptr; int l = 0;
+    Node<T>* arr[countNodes()];
+    ptr = head;
+    while(ptr)
+    {
+        arr[l] = ptr;
+        ptr = ptr->next;
+        l++;
+    }
+    if(l%2 == 0)
+        return arr[(l-1)/2];
+    return arr[l/2];
+}
+
+template <typename T>
+Node<T>* LinkedList<T>::middle(int choice)
+{
+    if(choice == 0)
+        return middleL();
+    else
+        return middleR();
+}
+
 int main()
 {
     int n;
@@ -145,10 +191,16 @@ int main()
     for(int i = 0; i < n; i++)
         cin>>arr[i];
     
-    LinkedList<int> first(arr, n, 2);
-    first.display();
-    cout<<"Deleted element: "<<first.deleteNode(1)<<"\n";
-    first.display();
+    LinkedList<int> list(arr, n, 2);
+    list.display();
+    
+    if(list.countNodes()%2 == 0)
+    {
+        cout<<"Element in the middle-left: "<<list.middle(0)->data<<"\n";
+        cout<<"Element in the middle-right: "<<list.middle(1)->data<<"\n";
+    }
+    else
+        cout<<"Element in the middle: "<<list.middle(2)->data<<"\n";
     
     return 0;
 }
